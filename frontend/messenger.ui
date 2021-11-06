@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>keeper</string>
+   <string>messenger</string>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color: #2f3032;</string>
@@ -238,6 +238,9 @@
 }
 
 </string>
+    </property>
+    <property name="inputMethodHints">
+     <set>Qt::ImhNone</set>
     </property>
     <property name="frameShape">
      <enum>QFrame::NoFrame</enum>
