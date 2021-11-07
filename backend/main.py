@@ -98,13 +98,13 @@ class FormWindow(QMainWindow):
             if self.state == 'host':
                 self.chat_field.insertHtml(
                     ConfigHandler.host_message.format(
-                        'host', message
+                        self.state, message
                     )
                 )
             else:
                 self.chat_field.insertHtml(
                     ConfigHandler.client_message.format(
-                        'client', message
+                        self.state, message
                     )
                 )
             self.message_line.clear()
