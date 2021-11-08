@@ -10,9 +10,8 @@ class ConfigHandler:
     file_in_mode = config['FILES']['file_in_mode']
 
     charset = config['ARGS']['charset']
+    host_address = config['ARGS']['host']
 
     enter_key = int(config['KEYS']['Enter'])
 
-    host_message = config['MESSAGE']['host_message']
-    client_message = config['MESSAGE']['client_message']
-    new_connection_message = config['MESSAGE']['new_connection_message']
+    message = config['MESSAGE']['message']

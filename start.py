@@ -1,8 +1,8 @@
 import sys
 from PyQt5 import QtWidgets
 
-from backend.config_handler import ConfigHandler
-from backend.file_handler import fileHandler
+from backend.handlers.config_handler import ConfigHandler
+from backend.handlers.file_handler import fileHandler
 from backend.main import FormWindow
 
 if __name__ == '__main__':

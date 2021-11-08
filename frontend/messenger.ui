@@ -294,7 +294,7 @@ QPushButton:pressed {
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QLineEdit" name="host_line">
+   <widget class="QLineEdit" name="host_field">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -515,7 +515,7 @@ QLineEdit[echoMode=&quot;2&quot;] {
      <bool>false</bool>
     </property>
    </widget>
-   <widget class="QLineEdit" name="port_line">
+   <widget class="QLineEdit" name="port_field">
     <property name="geometry">
      <rect>
       <x>230</x>
@@ -781,7 +781,7 @@ QPushButton:pressed {
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QLineEdit" name="key_line">
+   <widget class="QLineEdit" name="key_field">
     <property name="geometry">
      <rect>
       <x>320</x>
@@ -999,7 +999,7 @@ QLineEdit[echoMode=&quot;2&quot;] {
      <bool>false</bool>
     </property>
    </widget>
-   <widget class="QLineEdit" name="message_line">
+   <widget class="QLineEdit" name="message_field">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -1262,7 +1262,7 @@ QPushButton:pressed {
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QLineEdit" name="nickname">
+   <widget class="QLineEdit" name="name_field">
     <property name="geometry">
      <rect>
       <x>500</x>
