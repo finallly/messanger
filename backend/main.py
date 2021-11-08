@@ -1,10 +1,10 @@
-import socket
-from threading import Thread
+import random
 
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow
 
-from .config_handler import ConfigHandler
+from .handlers.config_handler import ConfigHandler
+from .sockets import start_accepting_socket_thread, start_connecting_socket_thread
 
 
 class FormWindow(QMainWindow):
@@ -13,98 +13,83 @@ class FormWindow(QMainWindow):
         super().__init__()
         uic.loadUi(ConfigHandler.main_form_file, self)
 
-        self.state = None
-        self.host_address = '0.0.0.0'
+        self.state = False
+        self.color = self.color_randomizer()
+        self.host_address = ConfigHandler.host_address
         self.button_send.clicked.connect(self.send)
-        self.button_host.clicked.connect(self.start_listen)
-        self.button_connect.clicked.connect(self.start_connection)
+        self.button_host.clicked.connect(self.set_port)
+        self.button_host.clicked.connect(self.set_name)
+        self.button_host.clicked.connect(self.host)
+        self.button_connect.clicked.connect(self.set_port)
+        self.button_connect.clicked.connect(self.set_name)
+        self.button_connect.clicked.connect(self.set_client_address)
+        self.button_connect.clicked.connect(self.connect)
 
     def keyPressEvent(self, event) -> None:
         if event.key() == ConfigHandler.enter_key:
             self.send()
 
-    def start_listen(self) -> None:
-        if not self.state:
-            self.state = 'host'
-            thread = Thread(target=self.host)
-            thread.start()
-
     def host(self) -> None:
-        port = int(self.port_line.text())
-        server_socket = socket.socket(
-            socket.AF_INET, socket.SOCK_STREAM
+        if self.state:
+            return
+
+        self.state = not self.state
+        start_accepting_socket_thread(
+            address=self.host_address,
+            port=self.port,
+            instance=self
         )
-        server_socket.setsockopt(
-            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1
-        )
-        server_socket.bind(
-            (self.host_address, port)
-        )
-        server_socket.listen()
-
-        while True:
-            client_socket, client_address = server_socket.accept()
-            self.communication_socket = client_socket
-            self.chat_field.insertHtml(
-                ConfigHandler.new_connection_message.format(
-                    client_address[0]
-                )
-            )
-
-            while True:
-                request = client_socket.recv(4096)
-
-                if not request:
-                    break
-
-                self.chat_field.insertHtml(
-                    ConfigHandler.client_message.format(
-                        'client', request.decode()
-                    )
-                )
-
-            client_socket.close()
-
-    def start_connection(self) -> None:
-        if not self.state:
-            self.state = 'client'
-            thread = Thread(target=self.connect)
-            thread.start()
 
     def connect(self) -> None:
-        connection_address = self.host_line.text()
-        connection_port = int(self.port_line.text())
-        self.communication_socket = socket.socket()
-        self.communication_socket.connect(
-            (connection_address, connection_port)
+        if self.state:
+            return
+
+        self.state = not self.state
+        start_connecting_socket_thread(
+            address=self.client_address,
+            port=self.port,
+            instance=self
         )
 
-        while True:
-            request = self.communication_socket.recv(4096)
+    def set_port(self) -> None:
+        port = self.port_field.text()
+        self.port = int(port)
 
-            if not request:
-                continue
+    def set_client_address(self) -> None:
+        self.client_address = self.host_field.text()
 
-            self.chat_field.insertHtml(
-                ConfigHandler.host_message.format(
-                    'host', request.decode()
-                )
-            )
+    def set_name(self) -> None:
+        self.name = self.name_field.text()
 
     def send(self) -> None:
-        message = self.message_line.text()
-        if message:
-            self.communication_socket.send(message.encode('utf-8'))
-            if self.state == 'host':
-                self.chat_field.insertHtml(
-                    ConfigHandler.host_message.format(
-                        self.state, message
-                    )
-                )
-            else:
-                self.chat_field.insertHtml(
-                    ConfigHandler.client_message.format(
-                        self.state, message
-                    )
-                )
-            self.message_line.clear()
+        message = self.message_field.text()
+        self.message_field.clear()
+
+        if not message or not self.state:
+            return
+
+        message = ConfigHandler.message.format(
+            self.color, self.name, message
+        )
+        self.communication_socket.send(
+            message.encode(
+                ConfigHandler.charset
+            )
+        )
+        self.send_user_message(
+            message
+        )
+
+    def send_user_message(self, message: str) -> None:
+        self.chat_field.insertHtml(
+            message
+        )
+        self.chat_field.moveCursor(
+            uic.properties.QtGui.QTextCursor.End
+        )
+
+    def color_randomizer(self) -> str:
+        random_number = random.randint(0, 0xFFFFFF)
+        random_hex = hex(random_number)
+
+        return f'#{random_hex[2:]}'
