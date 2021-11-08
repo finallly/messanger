@@ -14,6 +14,4 @@ class ConfigHandler:
 
     enter_key = int(config['KEYS']['Enter'])
 
-    host_message = config['MESSAGE']['host_message']
-    client_message = config['MESSAGE']['client_message']
-    new_connection_message = config['MESSAGE']['new_connection_message']
+    message = config['MESSAGE']['message']
