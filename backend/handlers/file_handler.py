@@ -1,4 +1,4 @@
-from .config_handler import ConfigHandler
+from backend.handlers.config_handler import ConfigHandler
 
 
 class fileHandler(object):

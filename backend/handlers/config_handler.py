@@ -10,6 +10,7 @@ class ConfigHandler:
     file_in_mode = config['FILES']['file_in_mode']
 
     charset = config['ARGS']['charset']
+    host_address = config['ARGS']['host']
 
     enter_key = int(config['KEYS']['Enter'])
 
