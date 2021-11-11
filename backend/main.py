@@ -4,7 +4,7 @@ from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow
 
 from .handlers.config_handler import ConfigHandler
-from .sockets import start_accepting_socket_thread, start_connecting_socket_thread
+from .sockets import start_accepting_socket_thread, start_connecting_socket
 
 
 class FormWindow(QMainWindow):
@@ -45,7 +45,7 @@ class FormWindow(QMainWindow):
             return
 
         self.state = not self.state
-        start_connecting_socket_thread(
+        start_connecting_socket(
             address=self.client_address,
             port=self.port,
             instance=self
