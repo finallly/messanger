@@ -1,10 +1,15 @@
 import random
 
+from Crypto.Cipher import AES
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow
 
+from Crypto.PublicKey import RSA
+
+from .sockets.utils import PKCS1_OAEP
+from .sockets.utils import generate_byte_string
 from .handlers.config_handler import ConfigHandler
-from .sockets import start_accepting_socket_thread, start_connecting_socket_thread
+from .handlers.socket_handler import SocketHandler
 
 
 class FormWindow(QMainWindow):
@@ -14,14 +19,23 @@ class FormWindow(QMainWindow):
         uic.loadUi(ConfigHandler.main_form_file, self)
 
         self.state = False
-        self.color = self.color_randomizer()
-        self.host_address = ConfigHandler.host_address
+        self.clients_mapping = {}
+        self.config = ConfigHandler()
+        self.socket_handler = SocketHandler()
+        self.host_address = self.config.host_address
+
+        self.color_randomizer()
+        self.prepare_byte_data()
+
+        self.button_disconnect.hide()
+        self.button_disconnect.clicked.connect(self.disconnect)
+
         self.button_send.clicked.connect(self.send)
+
         self.button_host.clicked.connect(self.set_port)
-        self.button_host.clicked.connect(self.set_name)
         self.button_host.clicked.connect(self.host)
+
         self.button_connect.clicked.connect(self.set_port)
-        self.button_connect.clicked.connect(self.set_name)
         self.button_connect.clicked.connect(self.set_client_address)
         self.button_connect.clicked.connect(self.connect)
 
@@ -33,10 +47,22 @@ class FormWindow(QMainWindow):
         if self.state:
             return
 
-        self.state = not self.state
-        start_accepting_socket_thread(
+        self.set_name()
+
+        self.state = 'host'
+        self.socket_handler.start_basic_socket_thread(
             address=self.host_address,
-            port=self.port,
+            port=self.config.basic_port,
+            instance=self
+        )
+        self.socket_handler.start_name_socket_thread(
+            address=self.host_address,
+            port=self.name_socket_port,
+            instance=self
+        )
+        self.socket_handler.start_accepting_socket_thread(
+            address=self.host_address,
+            port=self.chat_socket_port,
             instance=self
         )
 
@@ -44,16 +70,30 @@ class FormWindow(QMainWindow):
         if self.state:
             return
 
-        self.state = not self.state
-        start_connecting_socket_thread(
+        self.set_name()
+
+        self.state = 'client'
+        self.socket_handler.start_connecting_socket_thread(
             address=self.client_address,
-            port=self.port,
             instance=self
         )
+        self.button_connect.hide()
+        self.button_disconnect.show()
+
+    def disconnect(self) -> None:
+        self.communication_socket.close()
+        self.button_disconnect.hide()
+        self.button_connect.show()
 
     def set_port(self) -> None:
-        port = self.port_field.text()
-        self.port = int(port)
+        self.name_socket_port = random.randint(10000, 60000)
+        self.chat_socket_port = random.randint(10000, 60000)
+
+    def prepare_byte_data(self) -> None:
+        key_pair = RSA.generate(3072)
+        self.private_key = key_pair
+        self.public_key = key_pair.public_key()
+        self.encryptor = PKCS1_OAEP.new(key_pair)
 
     def set_client_address(self) -> None:
         self.client_address = self.host_field.text()
@@ -68,17 +108,43 @@ class FormWindow(QMainWindow):
         if not message or not self.state:
             return
 
-        message = ConfigHandler.message.format(
-            self.color, self.name, message
-        )
-        self.communication_socket.send(
-            message.encode(
-                ConfigHandler.charset
+        if self.state == 'client':
+            message = ConfigHandler.message.format(
+                self.color, self.name, message
             )
-        )
-        self.send_user_message(
-            message
-        )
+
+            aes_encryptor = AES.new(self.session_key, AES.MODE_EAX)
+            aes_text = aes_encryptor.encrypt(
+                message.encode(self.config.charset)
+            )
+            byte_message = generate_byte_string(
+                [aes_text, aes_encryptor.nonce], self.config.delimiter, self.config.charset
+            )
+
+            self.communication_socket.send(
+                byte_message
+            )
+
+        if self.state == 'host':
+            message = ConfigHandler.message.format(
+                self.color, self.name, message
+            )
+            for client in self.clients_mapping.values():
+                aes_encryptor = AES.new(client['session_key'], AES.MODE_EAX)
+                aes_text = aes_encryptor.encrypt(
+                    message.encode(self.config.charset)
+                )
+                byte_message = generate_byte_string(
+                    [aes_text, aes_encryptor.nonce], self.config.delimiter, self.config.charset
+                )
+
+                client['socket'].send(
+                    byte_message
+                )
+
+            self.send_user_message(
+                message
+            )
 
     def send_user_message(self, message: str) -> None:
         self.chat_field.insertHtml(
@@ -88,8 +154,7 @@ class FormWindow(QMainWindow):
             uic.properties.QtGui.QTextCursor.End
         )
 
-    def color_randomizer(self) -> str:
+    def color_randomizer(self):
         random_number = random.randint(0, 0xFFFFFF)
         random_hex = hex(random_number)
-
-        return f'#{random_hex[2:]}'
+        self.color = f'#{random_hex[2:]}'
