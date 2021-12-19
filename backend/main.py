@@ -1,9 +1,11 @@
 import random
+from socket import SHUT_RDWR
 
 from Crypto.Cipher import AES
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow
 
+from loguru import logger
 from Crypto.PublicKey import RSA
 
 from .sockets.utils import PKCS1_OAEP
@@ -19,6 +21,7 @@ class FormWindow(QMainWindow):
         uic.loadUi(ConfigHandler.main_form_file, self)
 
         self.state = False
+        self.communication_socket = None
         self.clients_mapping = {}
         self.config = ConfigHandler()
         self.socket_handler = SocketHandler()
@@ -71,6 +74,7 @@ class FormWindow(QMainWindow):
             return
 
         self.set_name()
+        self.chat_field.clear()
 
         self.state = 'client'
         self.socket_handler.start_connecting_socket_thread(
@@ -81,7 +85,11 @@ class FormWindow(QMainWindow):
         self.button_disconnect.show()
 
     def disconnect(self) -> None:
-        self.communication_socket.close()
+        self.state = None
+
+        if self.communication_socket:
+            self.communication_socket.shutdown(SHUT_RDWR)
+
         self.button_disconnect.hide()
         self.button_connect.show()
 
@@ -101,6 +109,7 @@ class FormWindow(QMainWindow):
     def set_name(self) -> None:
         self.name = self.name_field.text()
 
+    @logger.catch
     def send(self) -> None:
         message = self.message_field.text()
         self.message_field.clear()

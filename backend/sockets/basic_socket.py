@@ -1,9 +1,11 @@
 import socket
-import threading
+
+from loguru import logger
 
 from .utils import generate_hash, get_random_bytes, generate_byte_string
 
 
+@logger.catch
 def start_basic_socket(address: str, port: int, instance):
     config = instance.config
     basic_socket = socket.socket(
@@ -46,13 +48,3 @@ def start_basic_socket(address: str, port: int, instance):
 
             client_socket.close()
             break
-
-
-def start_basic_socket_thread(address: str, port: int, instance):
-    thread = threading.Thread(
-        target=start_basic_socket,
-        args=[
-            address, port, instance
-        ]
-    )
-    thread.start()

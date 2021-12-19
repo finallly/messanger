@@ -1,6 +1,7 @@
 import socket
 from time import time
 
+from loguru import logger
 from Crypto.Cipher import AES
 
 from .utils import generate_hash, generate_byte_string
@@ -8,6 +9,7 @@ from .utils import generate_hash, generate_byte_string
 MODE = AES.MODE_EAX
 
 
+@logger.catch
 def create_connection_socket(address: str, port: int) -> socket.socket:
     connection_socket = socket.socket()
     connection_socket.connect(
@@ -17,6 +19,7 @@ def create_connection_socket(address: str, port: int) -> socket.socket:
     return connection_socket
 
 
+@logger.catch
 def start_connecting_socket(address: str, port=None, instance=None) -> None:
     client_time = time()
     random_bytes = None
@@ -83,7 +86,10 @@ def start_connecting_socket(address: str, port=None, instance=None) -> None:
     instance.communication_socket = temporary_socket
 
     while True:
-        data = temporary_socket.recv(16384)
+        try:
+            data = temporary_socket.recv(16384)
+        except Exception:
+            break
 
         if not data:
             continue

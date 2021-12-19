@@ -1,10 +1,14 @@
 import socket
 
+from loguru import logger
 from Crypto.Cipher import AES
+
+from .utils import generate_byte_string
 
 MODE = AES.MODE_EAX
 
 
+@logger.catch
 def start_accepting_socket(address: str, port: int, instance) -> None:
     config = instance.config
     server_socket = socket.socket(
@@ -25,11 +29,14 @@ def start_accepting_socket(address: str, port: int, instance) -> None:
         instance.clients_mapping[client_ip]['socket'] = client_socket
 
         instance.send_user_message(
-            f'new connection from: {client_ip}\n'
+            config.new_connection_message.format(client_ip)
         )
 
         while True:
-            data = client_socket.recv(16384)
+            try:
+                data = client_socket.recv(16384)
+            except Exception:
+                break
 
             if not data:
                 continue
@@ -41,6 +48,27 @@ def start_accepting_socket(address: str, port: int, instance) -> None:
             decrypter = AES.new(client_session_key, MODE, nonce)
             message = decrypter.decrypt(aes_message)
 
+            for client in instance.clients_mapping.values():
+                aes_encryptor = AES.new(client['session_key'], AES.MODE_EAX)
+                aes_text = aes_encryptor.encrypt(
+                    message
+                )
+                byte_message = generate_byte_string(
+                    [aes_text, aes_encryptor.nonce], config.delimiter, config.charset
+                )
+
+                client['socket'].send(
+                    byte_message
+                )
+
             instance.send_user_message(
                 message.decode(config.charset)
             )
+
+        instance.send_user_message(
+            config.user_left_message.format(
+                instance.clients_mapping[client_ip]['name']
+            )
+        )
+
+        del instance.clients_mapping[client_ip]

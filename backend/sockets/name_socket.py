@@ -1,5 +1,6 @@
 import socket
 
+from loguru import logger
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 
@@ -10,6 +11,7 @@ def __generate_session_key() -> bytes:
     return get_random_bytes(32)
 
 
+@logger.catch
 def start_name_socket(address: str, port: int, instance):
     config = instance.config
     name_socket = socket.socket(
@@ -36,7 +38,14 @@ def start_name_socket(address: str, port: int, instance):
             client_time, client_hash, client_name, client_public_key = data.split(
                 config.delimiter.encode(config.charset)
             )
+
             random_bytes = instance.clients_mapping[client_ip]
+            del instance.clients_mapping[client_ip]
+
+            client_names = [client['name'] for client in instance.clients_mapping.values()]
+            if client_name.decode() in client_names:
+                break
+
             host_hash = generate_hash(
                 config=config, time=client_time, message=random_bytes
             )

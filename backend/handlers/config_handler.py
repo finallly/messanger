@@ -18,5 +18,8 @@ class ConfigHandler:
     basic_port = int(config['CONSTS']['basic_port'])
 
     message = config['MESSAGE']['message']
+    new_connection_message = config['MESSAGE']['connection_info_message']
+    user_left_message = config['MESSAGE']['user_left_message']
+    name_not_unique = config['MESSAGE']['user_name_not_unique']
 
     enter_key = int(config['KEYS']['Enter'])
