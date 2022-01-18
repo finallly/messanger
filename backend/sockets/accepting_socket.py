@@ -39,7 +39,7 @@ def start_accepting_socket(address: str, port: int, instance) -> None:
                 break
 
             if not data:
-                continue
+                break
 
             aes_message, nonce = data.split(
                 config.delimiter.encode(config.charset)

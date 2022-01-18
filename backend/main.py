@@ -89,6 +89,7 @@ class FormWindow(QMainWindow):
 
         if self.communication_socket:
             self.communication_socket.shutdown(SHUT_RDWR)
+            self.communication_socket.close()
 
         self.button_disconnect.hide()
         self.button_connect.show()
